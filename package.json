@@ -1,0 +1,65 @@
+{
+  "name": "simple-engram",
+  "version": "0.2.0",
+  "description": "Plug-and-play memory engine for AI agents — one import, any LLM, any storage, and your agent never forgets",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint src --ext .ts",
+    "format": "prettier --write \"src/**/*.ts\"",
+    "format:check": "prettier --check \"src/**/*.ts\"",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "ai",
+    "agent",
+    "memory",
+    "llm",
+    "rag",
+    "embeddings",
+    "typescript"
+  ],
+  "author": "Vaisakh <vaisakh@example.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vaisahub/simple-engram.git"
+  },
+  "bugs": {
+    "url": "https://github.com/vaisahub/simple-engram/issues"
+  },
+  "homepage": "https://github.com/vaisahub/simple-engram#readme",
+  "license": "MIT",
+  "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/node": "^20.11.0",
+    "@typescript-eslint/eslint-plugin": "^6.19.0",
+    "@typescript-eslint/parser": "^6.19.0",
+    "@vitest/ui": "^1.2.0",
+    "better-sqlite3": "^12.6.2",
+    "eslint": "^8.56.0",
+    "prettier": "^3.2.4",
+    "tsx": "^4.21.0",
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.0"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}
