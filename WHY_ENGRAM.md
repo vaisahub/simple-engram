@@ -94,7 +94,7 @@ const mem = new Engram({
 
 // Local models (Ollama, LM Studio)
 const mem = new Engram({
-  llm: async (prompt) => fetch('http://localhost:11434/api/generate'...)
+  llm: async (prompt) => ollama.generate({ model: 'llama3.2', prompt })
 });
 
 // Any LLM API!

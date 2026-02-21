@@ -22,6 +22,14 @@ function computeRetrievalScore(
   queryEmbedding: number[] | undefined,
   config: EngramConfig,
 ): number {
+  // Get configurable weights (with defaults)
+  const weights = {
+    relevance: config.retrievalWeights?.relevance ?? 0.5,
+    importance: config.retrievalWeights?.importance ?? 0.3,
+    recency: config.retrievalWeights?.recency ?? 0.2,
+    accessFrequency: config.retrievalWeights?.accessFrequency ?? 0.0,
+  };
+
   // Relevance: how well does this match the query?
   let relevance = 0;
 
@@ -38,8 +46,16 @@ function computeRetrievalScore(
   const ageDays = (Date.now() - memory.createdAt) / (1000 * 60 * 60 * 24);
   const recency = 1.0 / (1.0 + ageDays / 30);
 
+  // Access frequency: normalize to 0-1 range (assume max 100 accesses is "high")
+  const accessFrequency = Math.min(memory.accessCount / 100, 1.0);
+
   // Weighted combination
-  return 0.5 * relevance + 0.3 * importance + 0.2 * recency;
+  return (
+    weights.relevance * relevance +
+    weights.importance * importance +
+    weights.recency * recency +
+    weights.accessFrequency * accessFrequency
+  );
 }
 
 /**

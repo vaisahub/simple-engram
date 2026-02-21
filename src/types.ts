@@ -177,6 +177,12 @@ export interface EngramConfig {
 
   // ── Retrieval ──
   defaultK?: number;
+  retrievalWeights?: {
+    relevance?: number; // default: 0.5 - How well query matches content
+    importance?: number; // default: 0.3 - Base importance with decay
+    recency?: number; // default: 0.2 - How recent the memory is
+    accessFrequency?: number; // default: 0.0 - How often accessed
+  };
 
   // ── Namespace ──
   namespace?: string;

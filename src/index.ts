@@ -96,6 +96,12 @@ export class Engram extends EngramEmitter {
       maxRetentionDays: config.maxRetentionDays ?? 90,
       maxMemories: config.maxMemories ?? 10_000,
       defaultK: config.defaultK ?? 5,
+      retrievalWeights: {
+        relevance: config.retrievalWeights?.relevance ?? 0.5,
+        importance: config.retrievalWeights?.importance ?? 0.3,
+        recency: config.retrievalWeights?.recency ?? 0.2,
+        accessFrequency: config.retrievalWeights?.accessFrequency ?? 0.0,
+      },
       namespace: config.namespace ?? "default",
       hooks: config.hooks,
       trackHistory: config.trackHistory ?? true,

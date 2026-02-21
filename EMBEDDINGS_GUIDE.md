@@ -169,20 +169,12 @@ const mem = new Engram({
     return response.content[0].text;
   },
   embed: async (text) => {
-    // Use Voyage AI for embeddings
-    const response = await fetch('https://api.voyageai.com/v1/embeddings', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${process.env.VOYAGE_API_KEY}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        input: text,
-        model: 'voyage-2',
-      }),
+    // Use Voyage AI SDK for embeddings
+    const response = await voyageClient.embed({
+      input: text,
+      model: 'voyage-2',
     });
-    const data = await response.json();
-    return data.data[0].embedding;
+    return response.data[0].embedding;
   }
 });
 ```
@@ -192,29 +184,25 @@ const mem = new Engram({
 ### **3. Ollama (Local/Free)**
 
 ```typescript
+import { Ollama } from 'ollama';
+
+const ollama = new Ollama();
+
 const mem = new Engram({
   llm: async (prompt) => {
-    const response = await fetch('http://localhost:11434/api/generate', {
-      method: 'POST',
-      body: JSON.stringify({
-        model: 'llama3.2',
-        prompt,
-        stream: false,
-      }),
+    const response = await ollama.generate({
+      model: 'llama3.2',
+      prompt,
+      stream: false,
     });
-    const data = await response.json();
-    return data.response;
+    return response.response;
   },
   embed: async (text) => {
-    const response = await fetch('http://localhost:11434/api/embeddings', {
-      method: 'POST',
-      body: JSON.stringify({
-        model: 'nomic-embed-text', // Free local embeddings!
-        prompt: text,
-      }),
+    const response = await ollama.embeddings({
+      model: 'nomic-embed-text', // Free local embeddings!
+      prompt: text,
     });
-    const data = await response.json();
-    return data.embedding; // 768 dimensions
+    return response.embedding; // 768 dimensions
   }
 });
 ```
