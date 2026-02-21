@@ -1,6 +1,6 @@
 {
   "name": "simple-engram",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "description": "Plug-and-play memory engine for AI agents — one import, any LLM, any storage, and your agent never forgets",
   "type": "module",
   "main": "./dist/index.js",
