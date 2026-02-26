@@ -124,10 +124,13 @@ export async function retrieveMemories(
   }
 
   // Always do keyword search and merge results
+  // Use Set for O(n) deduplication instead of O(n²) array.some()
+  const seenIds = new Set(candidates.map((c) => c.id));
   const keywordResults = await store.search(query, k * 3);
   for (const result of keywordResults) {
-    if (!candidates.some((c) => c.id === result.id)) {
+    if (!seenIds.has(result.id)) {
       candidates.push(result);
+      seenIds.add(result.id);
     }
   }
 

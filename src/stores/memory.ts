@@ -4,7 +4,7 @@
  */
 
 import type { Memory, MemoryFilter, StoreAdapter } from "../types.js";
-import { tokenize } from "../tokenizer.js";
+import { tokenize, tokenCache } from "../tokenizer.js";
 import { jaccardSimilarityTokens } from "../similarity.js";
 
 export class MemoryStore implements StoreAdapter {
@@ -123,8 +123,9 @@ export class MemoryStore implements StoreAdapter {
     const memories = Array.from(this.memories.values());
 
     // Score each memory by keyword similarity
+    // Use token cache to avoid re-tokenization
     const scored = memories.map((memory) => {
-      const memoryTokens = tokenize(memory.content);
+      const memoryTokens = tokenCache.get(memory);
       const score = jaccardSimilarityTokens(queryTokens, memoryTokens);
       return { memory, score };
     });

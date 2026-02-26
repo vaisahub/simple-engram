@@ -277,6 +277,26 @@ export interface BootstrapOptions {
   batchSize?: number;
   delayMs?: number;
   onProgress?: (progress: BootstrapProgress) => void;
+  /**
+   * Stream individual conversation results as they complete
+   *
+   * When provided, results are NOT accumulated in the final RememberResult.
+   * You are responsible for storing/processing results in this callback.
+   * Use this for large imports (1000+ conversations) to avoid memory accumulation.
+   *
+   * @param result - Result from processing a single conversation
+   * @param conversationIndex - Index of the conversation in the input array
+   *
+   * @example
+   * await memory.bootstrap(conversations, {
+   *   onResult: (result, index) => {
+   *     // You manage storage
+   *     db.save(result);
+   *     fs.appendFileSync('log.txt', `${index}: ${result.stored.length} stored\n`);
+   *   }
+   * });
+   */
+  onResult?: (result: RememberResult, conversationIndex: number) => void;
   dryRun?: boolean;
 }
 

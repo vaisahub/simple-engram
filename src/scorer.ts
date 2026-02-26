@@ -8,7 +8,7 @@ import type {
   EmbedFunction,
   SurpriseResult,
 } from "./types.js";
-import { tokenize } from "./tokenizer.js";
+import { tokenize, tokenCache } from "./tokenizer.js";
 import { cosineSimilarity, jaccardSimilarityTokens } from "./similarity.js";
 import { explainSurprise, explainStoreDecision } from "./explainer.js";
 
@@ -47,6 +47,7 @@ async function semanticNovelty(
 
 /**
  * Compute keyword novelty using Jaccard similarity
+ * Uses token cache for Memory objects to avoid re-tokenization
  */
 function keywordNovelty(
   candidate: MemoryCandidate,
@@ -58,7 +59,8 @@ function keywordNovelty(
   let maxJaccard = 0;
 
   for (const mem of existing) {
-    const memTokens = tokenize(mem.content);
+    // Use cached tokens for Memory objects
+    const memTokens = tokenCache.get(mem);
     const jaccard = jaccardSimilarityTokens(candidateTokens, memTokens);
     maxJaccard = Math.max(maxJaccard, jaccard);
   }
@@ -83,6 +85,7 @@ function categoryRarity(
 
 /**
  * Find the most similar existing memory
+ * Uses token cache for Memory objects to avoid re-tokenization
  */
 function findMostSimilar(
   candidate: MemoryCandidate,
@@ -103,8 +106,8 @@ function findMostSimilar(
       // Use cosine similarity if embeddings available
       similarity = cosineSimilarity(candidateEmbedding, mem.embedding);
     } else {
-      // Fall back to Jaccard
-      const memTokens = tokenize(mem.content);
+      // Fall back to Jaccard with cached tokens
+      const memTokens = tokenCache.get(mem);
       similarity = jaccardSimilarityTokens(candidateTokens, memTokens);
     }
 
@@ -230,7 +233,7 @@ export async function scoreAndDecide(
           )
         : jaccardSimilarityTokens(
             tokenize(candidate.content),
-            tokenize(result.closestExisting.content),
+            tokenCache.get(result.closestExisting),
           )
       : undefined;
 

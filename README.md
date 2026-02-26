@@ -10,6 +10,8 @@ npm install simple-engram
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Zero Dependencies](https://img.shields.io/badge/dependencies-0-green.svg)](package.json)
 
+**→ [Agentic System Integration Guide](./docs/AGENTIC_WORKFLOW.md)** — Complete workflow for integrating Engram into AI agents
+
 ---
 
 ## What is Engram?
@@ -97,6 +99,44 @@ await mem.context(query);      // Format for LLM prompts
 - Automatic deduplication and summarization
 - Natural forgetting of outdated info
 - Personalization without managing a database
+
+---
+
+## Cross-Session Memory
+
+**Engram automatically loads and compares against existing memories across process restarts.**
+
+```typescript
+import { Engram, SqliteStore } from 'simple-engram';
+
+// Session 1
+const memory = new Engram({
+  llm,
+  store: new SqliteStore({ path: './memory.db' })
+});
+await memory.init(); // Load existing
+
+await memory.remember([{ role: 'user', content: 'I prefer TypeScript' }]);
+await memory.close();
+
+// ===== Process restarts =====
+
+// Session 2 (hours/days later)
+const memory2 = new Engram({
+  llm,
+  store: new SqliteStore({ path: './memory.db' }) // Same path!
+});
+await memory2.init(); // Loads "I prefer TypeScript" from Session 1
+
+await memory2.remember([{ role: 'user', content: 'I also like Python' }]);
+// ✅ Compares against TypeScript preference from Session 1
+// ✅ Cross-session memory works automatically!
+```
+
+**Key Points:**
+- `init()` loads all existing memories from storage
+- New memories are compared against ALL existing memories
+- Works with SqliteStore and JsonFileStore (not MemoryStore)
 
 ---
 
@@ -224,6 +264,7 @@ const mem = new Engram({
 ## Documentation
 
 📚 **Detailed Guides:**
+- [Agentic System Integration](./docs/AGENTIC_WORKFLOW.md) — Complete workflow for AI agents
 - [API Reference](./docs/API.md) — Complete method documentation
 - [Configuration Guide](./docs/CONFIGURATION.md) — All options explained
 - [Storage Adapters](./docs/STORAGE.md) — In-memory, SQLite, custom stores

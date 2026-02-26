@@ -82,6 +82,9 @@ export class Engram extends EngramEmitter {
   constructor(config: EngramConfig = {}) {
     super();
 
+    // Prevent memory leaks from excessive event listeners
+    this.setMaxListeners(50);
+
     // Initialize config with defaults
     this.config = {
       llm: config.llm,
@@ -124,6 +127,9 @@ export class Engram extends EngramEmitter {
    * Close and cleanup
    */
   async close(): Promise<void> {
+    // Remove all event listeners to prevent memory leaks
+    this.removeAllListeners();
+
     if (this.storeAdapter.close) {
       await this.storeAdapter.close();
     }
@@ -756,6 +762,9 @@ export class Engram extends EngramEmitter {
 
   /**
    * bootstrap() — Bulk import from conversations
+   *
+   * For large imports (1000+ conversations), use onResult callback to stream results
+   * and avoid accumulating all data in memory.
    */
   async bootstrap(
     conversations: BootstrapInput[],
@@ -763,11 +772,13 @@ export class Engram extends EngramEmitter {
   ): Promise<RememberResult> {
     const batchSize = options.batchSize ?? 5;
     const delayMs = options.delayMs ?? 500;
+    const streaming = !!options.onResult;
 
+    // If streaming, only accumulate counts; otherwise accumulate full results
     const aggregated: RememberResult = {
-      stored: [],
-      rejected: [],
-      errors: [],
+      stored: streaming ? [] : [],
+      rejected: streaming ? [] : [],
+      errors: streaming ? [] : [],
       dryRun: options.dryRun ?? false,
     };
 
@@ -785,16 +796,27 @@ export class Engram extends EngramEmitter {
       const batch = conversations.slice(i, i + batchSize);
       progress.currentBatch++;
 
-      for (const conv of batch) {
+      for (let j = 0; j < batch.length; j++) {
+        const conv = batch[j];
+        const conversationIndex = i + j;
+
         const result = await this.remember(conv.messages, {
           source: conv.source,
           dryRun: options.dryRun,
         });
 
-        aggregated.stored.push(...result.stored);
-        aggregated.rejected.push(...result.rejected);
-        aggregated.errors.push(...result.errors);
+        // Stream result if callback provided
+        if (options.onResult) {
+          options.onResult(result, conversationIndex);
+          // Don't accumulate full results when streaming
+        } else {
+          // Accumulate full results (legacy behavior)
+          aggregated.stored.push(...result.stored);
+          aggregated.rejected.push(...result.rejected);
+          aggregated.errors.push(...result.errors);
+        }
 
+        // Update progress counts
         progress.completed++;
         progress.stored += result.stored.length;
         progress.rejected += result.rejected.length;
