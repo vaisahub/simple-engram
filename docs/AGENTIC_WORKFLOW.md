@@ -644,6 +644,11 @@ memory.on('forgotten', (ids, count) => {
 memory.on('error', (error) => {
   console.error('❌ Memory error:', error);
 });
+
+memory.on('warning', (message) => {
+  console.warn('⚠️ Warning:', message);
+  // Example: "Memory usage at 80%: 8000/10000. Monitor memory growth."
+});
 ```
 
 ### Event Listener Best Practices

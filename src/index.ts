@@ -267,6 +267,30 @@ export class Engram extends EngramEmitter {
         // Add to existing for subsequent candidates
         existing.push(approvedMemory);
       }
+
+      // Step 11: Check memory usage and emit warning if needed
+      if (result.stored.length > 0) {
+        const totalMemories = existing.length;
+        const threshold80 = this.config.maxMemories * 0.8;
+        const threshold90 = this.config.maxMemories * 0.9;
+
+        if (totalMemories >= this.config.maxMemories) {
+          this.emit(
+            "warning",
+            `Memory limit reached: ${totalMemories}/${this.config.maxMemories}. Consider calling forget() to prune old memories.`,
+          );
+        } else if (totalMemories >= threshold90) {
+          this.emit(
+            "warning",
+            `Memory usage at 90%: ${totalMemories}/${this.config.maxMemories}. Consider calling forget() soon.`,
+          );
+        } else if (totalMemories >= threshold80) {
+          this.emit(
+            "warning",
+            `Memory usage at 80%: ${totalMemories}/${this.config.maxMemories}. Monitor memory growth.`,
+          );
+        }
+      }
     } catch (error) {
       if (error instanceof Error) {
         this.emit("error", error);
