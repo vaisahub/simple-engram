@@ -58,10 +58,45 @@ const context = await mem.context('preferences', { format: 'bullets' });
 
 ---
 
+## How It Works
+
+### Two-Phase Memory Processing
+
+**Phase 1: Extraction (Uses Your LLM)**
+- Calls your LLM once per `remember()` to extract facts
+- Cost: ~500-1000 tokens per extraction
+- Example: "I like Python" → extracts "User prefers Python programming language"
+
+**Phase 2: Surprise Detection (No LLM - Fast & Free)**
+- Uses embeddings (if provided) OR keywords for similarity comparison
+- Pure mathematical scoring: cosine similarity or Jaccard index
+- Cost: $0 (local computation)
+- Example: Compares "User prefers Python" against all existing memories
+
+**Total Cost per remember():**
+- With embeddings: 1 LLM call + N embedding calls (~$0.015-0.02)
+- Without embeddings: 1 LLM call only (~$0.015)
+
+**Cost Optimization:**
+```typescript
+// Use hooks to skip LLM for small talk
+const memory = new Engram({
+  llm,
+  hooks: {
+    beforeExtract: async (messages) => {
+      if (isSmallTalk(messages)) return []; // Skip LLM!
+      return messages;
+    }
+  }
+});
+```
+
+---
+
 ## Why Use Engram?
 
 ### 🎯 Built-in Intelligence
-- **Surprise Detection** — Only stores novel information (no duplicates)
+- **Surprise Detection** — Only stores novel information (no duplicates, no LLM)
 - **Memory Decay** — Ebbinghaus forgetting curve with access frequency boost
 - **Smart Retrieval** — Semantic search with configurable ranking weights
 - **Auto-merging** — Combines similar memories automatically
@@ -102,6 +137,56 @@ await mem.context(query);      // Format for LLM prompts
 
 ---
 
+## Multi-User / Namespace Support
+
+**Isolate memories per user, tenant, or context using namespaces.**
+
+```typescript
+import { Engram, SqliteStore } from 'simple-engram';
+
+// Pattern 1: Separate Engram instance per user
+function getUserMemory(userId: string) {
+  return new Engram({
+    llm,
+    namespace: `user-${userId}`,
+    store: new SqliteStore({ path: './shared.db' })
+  });
+}
+
+const aliceMemory = getUserMemory('alice-123');
+const bobMemory = getUserMemory('bob-456');
+
+await aliceMemory.remember([{ role: 'user', content: 'I like Python' }]);
+await bobMemory.remember([{ role: 'user', content: 'I like Java' }]);
+
+// Memories are completely isolated - Alice and Bob never see each other's data
+const alicePrefs = await aliceMemory.recall('preferences'); // Only Alice's
+const bobPrefs = await bobMemory.recall('preferences');     // Only Bob's
+
+// Pattern 2: Multi-tenant agent
+class MultiTenantAgent {
+  private memories = new Map<string, Engram>();
+
+  getMemory(userId: string): Engram {
+    if (!this.memories.has(userId)) {
+      this.memories.set(userId, new Engram({
+        llm: this.llm,
+        namespace: `tenant-${userId}`,
+        store: new SqliteStore({ path: './tenants.db' })
+      }));
+    }
+    return this.memories.get(userId)!;
+  }
+}
+```
+
+**Key Points:**
+- Namespaces provide complete memory isolation
+- Single database can store multiple namespaces
+- Perfect for SaaS, multi-user agents, or context separation
+
+---
+
 ## Cross-Session Memory
 
 **Engram automatically loads and compares against existing memories across process restarts.**
@@ -137,6 +222,44 @@ await memory2.remember([{ role: 'user', content: 'I also like Python' }]);
 - `init()` loads all existing memories from storage
 - New memories are compared against ALL existing memories
 - Works with SqliteStore and JsonFileStore (not MemoryStore)
+
+---
+
+## Advanced Filtering
+
+**Filter memories by category, importance, date, and metadata.**
+
+```typescript
+// Filter by category
+const preferences = await mem.recall('coding', {
+  categories: ['preference'],      // Only preferences
+  minImportance: 0.7              // High importance only
+});
+
+// Filter by date
+const recent = await mem.recall('projects', {
+  since: Date.now() - 7 * 24 * 60 * 60 * 1000,  // Last 7 days
+  categories: ['fact', 'episode']
+});
+
+// Filter by metadata
+const workMemories = await mem.recall('tasks', {
+  metadata: { project: 'engram', priority: 'high' }
+});
+
+// Combined filters
+const filtered = await mem.recall('python', {
+  categories: ['skill', 'preference'],
+  minImportance: 0.5,
+  since: Date.now() - 30 * 24 * 60 * 60 * 1000, // Last 30 days
+  k: 10  // Top 10 results
+});
+```
+
+**Efficient Database-Level Filtering:**
+- SqliteStore uses SQL WHERE clauses (indexed)
+- Filters applied at database level (not client-side)
+- Scales efficiently to 10k+ memories
 
 ---
 
